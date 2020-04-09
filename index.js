@@ -28,12 +28,23 @@ const db = {
   ]
 };
 
+
+app.get('/info', (request, response) => {
+  response.send(`<p>Phonebook has info for ${db.persons.length} people</p><p>${new Date()}</p>`);
+});
+
 app.get('/api/persons', (request, response) => {
   response.json(db.persons);
 });
 
-app.get('/info', (request, response) => {
-  response.send(`<p>Phonebook has info for ${db.persons.length} people</p><p>${new Date()}</p>`);
+app.get('/api/persons/:id', ({ params: { id } }, response) => {
+  const person = db.persons.find(person => person.id === Number(id));
+  console.log('persons id', person);
+  if (person) {
+    return response.json(person);
+  }
+
+  response.status(404).end();
 });
 
 const PORT = 3001;

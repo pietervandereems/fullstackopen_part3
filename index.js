@@ -28,6 +28,12 @@ const db = {
   ]
 };
 
+getUniqueId = () => {
+  const id = Math.floor(Math.random() * (9999999 - 1000001)) + 1000000;
+  return db.persons.find(person => person.id === id) ?
+    getUniqueId() :
+    id;
+};
 
 app.get('/info', (request, response) => {
   response.send(`<p>Phonebook has info for ${db.persons.length} people</p><p>${new Date()}</p>`);
@@ -39,7 +45,7 @@ app.get('/api/persons', (request, response) => {
 
 app.get('/api/persons/:id', ({ params: { id } }, response) => {
   const person = db.persons.find(person => person.id === Number(id));
-  
+
   if (person) {
     return response.json(person);
   }
@@ -52,6 +58,12 @@ app.delete('/api/persons/:id', ({ params: { id } }, response) => {
   db.persons = db.persons.filter(person => person.id !== delId);
 
   response.status(204).end();
+});
+
+app.post('/api/persons', (request, response) => {
+  const newPerson = { ...request.body, id: getUniqueId() };
+  db.persons = [...db.persons, newPerson];
+  response.json(newPerson);
 });
 
 const PORT = 3001;

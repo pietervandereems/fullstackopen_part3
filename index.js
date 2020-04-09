@@ -39,12 +39,19 @@ app.get('/api/persons', (request, response) => {
 
 app.get('/api/persons/:id', ({ params: { id } }, response) => {
   const person = db.persons.find(person => person.id === Number(id));
-  console.log('persons id', person);
+  
   if (person) {
     return response.json(person);
   }
 
   response.status(404).end();
+});
+
+app.delete('/api/persons/:id', ({ params: { id } }, response) => {
+  const delId = Number(id);
+  db.persons = db.persons.filter(person => person.id !== delId);
+
+  response.status(204).end();
 });
 
 const PORT = 3001;

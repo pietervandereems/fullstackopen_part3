@@ -61,6 +61,23 @@ app.delete('/api/persons/:id', ({ params: { id } }, response) => {
 });
 
 app.post('/api/persons', (request, response) => {
+  const body = request.body;
+  
+  const reply400 = () => response.status(400);
+  const replyMissing = (type) => reply400().json({error: `${type} is missing`});
+
+  if (!body.name) {
+    return replyMissing('name');
+  }
+
+  if (!body.number) {
+    return replyMissing('number');
+  }
+
+  if (db.persons.find(person => person.name === body.name)) {
+    return reply400().json({error: `${body.name} already exists in the Phonebook`});
+  }
+
   const newPerson = { ...request.body, id: getUniqueId() };
   db.persons = [...db.persons, newPerson];
   response.json(newPerson);

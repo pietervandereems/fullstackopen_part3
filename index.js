@@ -1,10 +1,22 @@
 const express = require('express');
 const morgan = require('morgan');
 
+morgan.token('postdata', (req) => {
+  if (req.method === 'POST' && req.body) {
+    try {
+      return JSON.stringify(req.body);
+    }
+    catch (e) {
+      return 'Body is not JSON';
+    }
+  }
+  return null;
+});
+
 const app = express();
 
 app.use(express.json());
-app.use(morgan('tiny'));
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :postdata'));
 
 const db = {
   "persons": [
@@ -65,9 +77,9 @@ app.delete('/api/persons/:id', ({ params: { id } }, response) => {
 
 app.post('/api/persons', (request, response) => {
   const body = request.body;
-  
+
   const reply400 = () => response.status(400);
-  const replyMissing = (type) => reply400().json({error: `${type} is missing`});
+  const replyMissing = (type) => reply400().json({ error: `${type} is missing` });
 
   if (!body.name) {
     return replyMissing('name');
@@ -78,7 +90,7 @@ app.post('/api/persons', (request, response) => {
   }
 
   if (db.persons.find(person => person.name === body.name)) {
-    return reply400().json({error: `${body.name} already exists in the Phonebook`});
+    return reply400().json({ error: `${body.name} already exists in the Phonebook` });
   }
 
   const newPerson = { ...request.body, id: getUniqueId() };

@@ -1,4 +1,5 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
+
 const personSchema = new mongoose.Schema({
   name: String,
   number: String
@@ -18,7 +19,7 @@ const init = () => {
   mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true });
 };
 
-const addPerson = () => {
+const  listPhonebook = () => {
   console.log('phonebook:');
 
   Person
@@ -32,7 +33,7 @@ const addPerson = () => {
   return;
 }
 
-const listPhonebook = () => {
+const addPerson = () => {
   const name = process.argv[3] || '';
   const number = process.argv[4] || '';
 
@@ -52,10 +53,10 @@ const listPhonebook = () => {
 switch (process.argv.length) {
   case 3:
     init();
-    return addPerson();
+    return listPhonebook();
   case 5:
     init();
-    return listPhonebook();
+    return addPerson();
   default:
     return exitUsage();
 };

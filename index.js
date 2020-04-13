@@ -25,6 +25,38 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :postdata'));
 
+const cleanupPerson = (person) => {
+  const err = { name: 'Missing' };
+  if (!person.name) {
+    return {
+      status: false,
+      error: {
+        ...err,
+        kind: 'name'
+      }
+    };
+  }
+
+  if (!person.number) {
+    return {
+      status: false,
+      error: {
+        ...err,
+        kind: 'number'
+      }
+    };
+  }
+
+  return {
+    status: true,
+    person: {
+      name: person.name,
+      number: person.number
+    }
+  };
+}
+
+// Routes
 app.get('/info', (request, response, next) => {
   Person.find({})
     .countDocuments()
@@ -61,30 +93,33 @@ app.delete('/api/persons/:id', ({ params: { id } }, response, next) => {
     .catch(err => next(err));
 });
 
-app.post('/api/persons', (request, response, next) => {
-  const body = request.body;
+app.post('/api/persons', ({ body }, response, next) => {
+  const person = cleanupPerson(body);
 
-  const reply400 = () => response.status(400);
-  const replyMissing = (type) => reply400().json({ error: `${type} is missing` });
-
-  if (!body.name) {
-    return replyMissing('name');
+  if (!person.status) {
+    return next(person.error);
   }
 
-  if (!body.number) {
-    return replyMissing('number');
-  }
-
-  const newPerson = new Person({
-    name: body.name,
-    number: body.number
-  });
+  const newPerson = new Person(person.person);
 
   newPerson.save()
     .then(savedPerson => response.json(savedPerson.toJSON()))
     .catch(err => next(err));
 });
 
+app.put('/api/persons/:id', ({ params: { id }, body }, response, next) => {
+  const person = cleanupPerson(body);
+
+  if (!person.status) {
+    return next(person.error);
+  }
+
+  Person.findByIdAndUpdate(id, person.person, { new: true })
+    .then(updatedPerson => response.json(updatedPerson.toJSON()))
+    .catch(err => next(err));
+});
+
+// Error handlers
 app.use(unknownEndpoint);
 app.use(errorHandler);
 

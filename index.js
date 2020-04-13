@@ -56,10 +56,11 @@ app.get('/api/persons/:id', ({ params: { id } }, response) => {
 });
 
 app.delete('/api/persons/:id', ({ params: { id } }, response) => {
-  // const delId = Number(id);
-  // db.persons = db.persons.filter(person => person.id !== delId);
-
-  response.status(204).end();
+  Person.findByIdAndRemove(id)
+    .then(result => {
+      response.status(204).end();
+    })
+    .catch(error => console.error(error));
 });
 
 app.post('/api/persons', (request, response) => {
@@ -82,7 +83,7 @@ app.post('/api/persons', (request, response) => {
   });
 
   newPerson.save()
-    .then(savedPerson => response.json(savedPerson.toJSON));
+    .then(savedPerson => response.json(savedPerson.toJSON()));
 });
 
 const PORT = process.env.PORT;

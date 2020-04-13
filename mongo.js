@@ -19,7 +19,7 @@ const init = () => {
   mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true });
 };
 
-const  listPhonebook = () => {
+const listPhonebook = () => {
   console.log('phonebook:');
 
   Person
@@ -31,7 +31,7 @@ const  listPhonebook = () => {
     });
 
   return;
-}
+};
 
 const addPerson = () => {
   const name = process.argv[3] || '';
@@ -44,19 +44,19 @@ const addPerson = () => {
 
   entry
     .save()
-    .then(response => {
+    .then(() => {
       console.log(`added ${name} number ${number} to phonebook`);
       mongoose.connection.close();
     });
-}
+};
 
 switch (process.argv.length) {
-  case 3:
-    init();
-    return listPhonebook();
-  case 5:
-    init();
-    return addPerson();
-  default:
-    return exitUsage();
-};
+case 3:
+  init();
+  return listPhonebook();
+case 5:
+  init();
+  return addPerson();
+default:
+  return exitUsage();
+}

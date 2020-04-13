@@ -1,6 +1,8 @@
+require('dotenv').config();
 const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
+const Person = require('./models/Person');
 
 morgan.token('postdata', (req) => {
   if (req.method === 'POST' && req.body) {
@@ -21,31 +23,6 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :postdata'));
 
-const db = {
-  "persons": [
-    {
-      "name": "Arto Hellas",
-      "number": "040-123456",
-      "id": 1
-    },
-    {
-      "name": "Ada Lovelace",
-      "number": "39-44-5323523",
-      "id": 2
-    },
-    {
-      "name": "Dan Abramov",
-      "number": "12-43-234345",
-      "id": 3
-    },
-    {
-      "name": "Mary Poppendieck",
-      "number": "39-23-6423122",
-      "id": 4
-    }
-  ]
-};
-
 getUniqueId = () => {
   const id = Math.floor(Math.random() * (9999999 - 1000001)) + 1000000;
   return db.persons.find(person => person.id === id) ?
@@ -54,26 +31,33 @@ getUniqueId = () => {
 };
 
 app.get('/info', (request, response) => {
-  response.send(`<p>Phonebook has info for ${db.persons.length} people</p><p>${new Date()}</p>`);
+  Person.find({})
+    .countDocuments()
+    .then(count => response.send(`<p>Phonebook has info for ${count} people</p><p>${new Date()}</p>`));
 });
 
 app.get('/api/persons', (request, response) => {
-  response.json(db.persons);
+  Person.find({})
+    .then(persons => {
+      response.json(persons.map(person => person.toJSON()));
+    });
 });
 
 app.get('/api/persons/:id', ({ params: { id } }, response) => {
-  const person = db.persons.find(person => person.id === Number(id));
+  Person.find({ _id: id })
+    .then(persons => {
+      if (persons.length === 1) {
+        return response.json(persons[0].toJSON());
+      }
 
-  if (person) {
-    return response.json(person);
-  }
+      response.status(404).end();
+    });
 
-  response.status(404).end();
 });
 
 app.delete('/api/persons/:id', ({ params: { id } }, response) => {
-  const delId = Number(id);
-  db.persons = db.persons.filter(person => person.id !== delId);
+  // const delId = Number(id);
+  // db.persons = db.persons.filter(person => person.id !== delId);
 
   response.status(204).end();
 });
@@ -92,16 +76,16 @@ app.post('/api/persons', (request, response) => {
     return replyMissing('number');
   }
 
-  if (db.persons.find(person => person.name === body.name)) {
-    return reply400().json({ error: `${body.name} already exists in the Phonebook` });
-  }
+  const newPerson = new Person({
+    name: body.name,
+    number: body.number
+  });
 
-  const newPerson = { ...request.body, id: getUniqueId() };
-  db.persons = [...db.persons, newPerson];
-  response.json(newPerson);
+  newPerson.save()
+    .then(savedPerson => response.json(savedPerson.toJSON));
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)

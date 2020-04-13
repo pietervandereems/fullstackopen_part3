@@ -3,6 +3,8 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const Person = require('./models/Person');
+const unknownEndpoint = require('./services/catchall');
+const errorHandler = require('./services/errorhandling');
 
 morgan.token('postdata', (req) => {
   if (req.method === 'POST' && req.body) {
@@ -23,27 +25,22 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :postdata'));
 
-getUniqueId = () => {
-  const id = Math.floor(Math.random() * (9999999 - 1000001)) + 1000000;
-  return db.persons.find(person => person.id === id) ?
-    getUniqueId() :
-    id;
-};
-
-app.get('/info', (request, response) => {
+app.get('/info', (request, response, next) => {
   Person.find({})
     .countDocuments()
-    .then(count => response.send(`<p>Phonebook has info for ${count} people</p><p>${new Date()}</p>`));
+    .then(count => response.send(`<p>Phonebook has info for ${count} people</p><p>${new Date()}</p>`))
+    .catch(err => next(err));
 });
 
-app.get('/api/persons', (request, response) => {
+app.get('/api/persons', (request, response, next) => {
   Person.find({})
     .then(persons => {
       response.json(persons.map(person => person.toJSON()));
-    });
+    })
+    .catch(err => next(err));
 });
 
-app.get('/api/persons/:id', ({ params: { id } }, response) => {
+app.get('/api/persons/:id', ({ params: { id } }, response, next) => {
   Person.find({ _id: id })
     .then(persons => {
       if (persons.length === 1) {
@@ -51,19 +48,20 @@ app.get('/api/persons/:id', ({ params: { id } }, response) => {
       }
 
       response.status(404).end();
-    });
+    })
+    .catch(err => next(err));
 
 });
 
-app.delete('/api/persons/:id', ({ params: { id } }, response) => {
+app.delete('/api/persons/:id', ({ params: { id } }, response, next) => {
   Person.findByIdAndRemove(id)
     .then(result => {
       response.status(204).end();
     })
-    .catch(error => console.error(error));
+    .catch(err => next(err));
 });
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
   const body = request.body;
 
   const reply400 = () => response.status(400);
@@ -83,8 +81,12 @@ app.post('/api/persons', (request, response) => {
   });
 
   newPerson.save()
-    .then(savedPerson => response.json(savedPerson.toJSON()));
+    .then(savedPerson => response.json(savedPerson.toJSON()))
+    .catch(err => next(err));
 });
+
+app.use(unknownEndpoint);
+app.use(errorHandler);
 
 const PORT = process.env.PORT;
 
